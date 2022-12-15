@@ -48,6 +48,7 @@ class OPEBenchmark:
                     gt_traj = gt_traj[video.absent == 1]
                     tracker_traj = tracker_traj[video.absent == 1]
                 success_ret_[video.name] = success_overlap(gt_traj, tracker_traj, n_frame)
+                print(video.name)
             success_ret[tracker_name] = success_ret_
         return success_ret
 

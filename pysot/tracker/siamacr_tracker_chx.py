@@ -218,10 +218,17 @@ class SiamACRTracker(SiameseTracker):
         cen = (cen - cen.min()) / cen.ptp()  # 归一化
         cen = cen.squeeze()
         lrtbs = outputs['loc'].data.cpu().numpy().squeeze()
+        acc = outputs['acc'].data.cpu().numpy()
+        acc = (acc - acc.min()) / acc.ptp()
+        acc = acc.squeeze()
+
+        # weight = cen + acc
+        # weight = (weight - weight.min()) / weight.ptp()
+        # weight = weight.squeeze()
         #
         upsize = (cfg.TRACK.SCORE_SIZE-1) * cfg.TRACK.STRIDE + 1
         penalty = self.cal_penalty(lrtbs, hp['penalty_k'])   # 这个惩罚项来自论文21
-        p_score = penalty * cls * cen  # 这里和论文有些出入
+        p_score = penalty * cls * acc * cen # 这里和论文有些出入
         # p_score = penalty * cls * 1
         if cfg.TRACK.hanming:
             hp_score = p_score*(1 - hp['window_lr']) + self.window * hp['window_lr']
@@ -231,7 +238,7 @@ class SiamACRTracker(SiameseTracker):
         hp_score_up = cv2.resize(hp_score, (upsize, upsize), interpolation=cv2.INTER_CUBIC)  # 论文中目标像素点的最大响应值
         p_score_up = cv2.resize(p_score, (upsize, upsize), interpolation=cv2.INTER_CUBIC)  # cls(i,j)
         cls_up = cv2.resize(cls, (upsize, upsize), interpolation=cv2.INTER_CUBIC)  # 未乘以惩罚项的cls
-        lrtbs = np.transpose(lrtbs,(1,2,0))
+        lrtbs = np.transpose(lrtbs, (1, 2, 0))
         lrtbs_up = cv2.resize(lrtbs, (upsize, upsize), interpolation=cv2.INTER_CUBIC)
 
         scale_score = upsize / cfg.TRACK.SCORE_SIZE  # 放大倍数

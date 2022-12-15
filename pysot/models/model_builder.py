@@ -20,6 +20,34 @@ from pysot.models.neck import get_neck
 from ..utils.location_grid import compute_locations
 from pysot.utils.xcorr import xcorr_depthwise
 
+cls_channel = 1
+
+class attentionlayer(nn.Module):  # attention global BxCxHxW
+
+    def __init__(self, in_dim):
+        super(attentionlayer, self).__init__()
+
+        self.chanel_in = in_dim
+
+        self.query_conv = nn.Conv2d(in_channels=in_dim, out_channels=in_dim // 16, kernel_size=3, padding=1)
+        self.key_conv = nn.Conv2d(in_channels=in_dim, out_channels=in_dim // 16, kernel_size=3, padding=1)
+        self.value_conv = nn.Conv2d(in_channels=in_dim, out_channels=in_dim, kernel_size=3, padding=1)
+        self.softmax = nn.Softmax(dim=-1)
+
+    def forward(self, x, y):
+        # 这里是self-attention
+        m_batchsize, C, height, width = x.size()
+        proj_query = self.query_conv(x).view(m_batchsize, -1, width * height).permute(0, 2, 1)
+        proj_key = self.key_conv(y).view(m_batchsize, -1, width * height)
+        energy = torch.bmm(proj_query, proj_key)
+        attention = self.softmax(energy)
+        proj_value = self.value_conv(y).view(m_batchsize, -1, width * height)
+
+        out = torch.bmm(proj_value, attention.permute(0, 2, 1))
+        out = out.view(m_batchsize, C, height, width)
+
+        return out
+
 class ModelBuilder(nn.Module):
     def __init__(self):
         super(ModelBuilder, self).__init__()
@@ -43,6 +71,10 @@ class ModelBuilder(nn.Module):
         self.loss_evaluator = make_siamacr_loss_evaluator(cfg)
 
         self.down = nn.ConvTranspose2d(256 * 3, 256, 1, 1)
+
+        self.pre_accness = None
+
+        self.attentionintegrate = attentionlayer(cls_channel)
 
 # 获取模板，第一帧为模板，并且没有将模板进行实时的更新
     def template(self, z):
@@ -104,14 +136,21 @@ class ModelBuilder(nn.Module):
             features = torch.cat([features,features_new],1)
         features = self.down(features)
 
-
+        pre_features = self.xcorr_depthwise(af[0], zf[0])
+        for i in range(len(af) - 1):
+            features_new = self.xcorr_depthwise(af[i + 1], zf[i + 1])
+            pre_features = torch.cat([pre_features, features_new], 1)
+        pre_features = self.down(features)
 
         cls, loc, cen, accness = self.acr_head(features)
+        _, _, _, pre_accness = self.acr_head(pre_features)
+
+        accness = self.attentionintegrate(pre_accness, accness)
 
         # cls --> 625*16 == cls_new
         cls_new = F.softmax(cls[:, :, :, :], dim=1).data[:, 1, :, :].permute(1,2,0).reshape(-1, 16)
         # cls的较大一部分点
-        cls_max = torch.max(cls_new, 0)[0]  # tuple类型？
+        cls_max = torch.max(cls_new, 0)[0]
         cls_index = cls_new > cls_max * 0.9500
         # 将位置取出
         cls_pos = np.where(cls_index.cpu() == 1)

@@ -79,6 +79,47 @@ class IOULoss(nn.Module):
             assert losses.numel() != 0
             return losses.mean()
 
+class GIOU_LOSS(nn.Module):
+    def __init__(self):
+        super(IOULoss, self).__init__()
+        self.border_loss = nn.BCEWithLogitsLoss()
+
+    def forward(self, pred, target, pred_cen, target_cen, weight=None):
+        pred_left = pred[:, 0]  # 表示对应的点离左边界的距离
+        pred_top = pred[:, 1]
+        pred_right = pred[:, 2]
+        pred_bottom = pred[:, 3]
+
+        target_left = target[:, 0]
+        target_top = target[:, 1]
+        target_right = target[:, 2]
+        target_bottom = target[:, 3]
+
+        target_aera = (target_left + target_right) * \
+                      (target_top + target_bottom)  #
+        pred_aera = (pred_left + pred_right) * \
+                    (pred_top + pred_bottom)
+
+        w_intersect = torch.min(pred_left, target_left) + \
+                      torch.min(pred_right, target_right)
+        h_intersect = torch.min(pred_bottom, target_bottom) + \
+                      torch.min(pred_top, target_top)
+        area_intersect = w_intersect * h_intersect  # 计算有问题
+        area_union = target_aera + pred_aera - area_intersect
+
+        d_pow = pow((target_cen[0] - pred_cen[0]), 2) + pow((target_cen[1] - pred_cen[1]))
+        c_pow = pow(torch.max(pred_left, target_left) + torch.max(pred_right, target_right), 2) + \
+                pow(torch.max(target_bottom, pred_bottom), torch.max(target_top, pred_top), 2)
+
+        d_iou = area_intersect/area_union - d_pow/c_pow
+        losses = d_iou
+
+        if weight is not None and weight.sum() > 0:
+            return (losses * weight).sum() / weight.sum()
+        else:
+            assert losses.numel() != 0
+            return losses.mean()
+
 
 class SiamACRLossComputation(object):
     """

@@ -224,8 +224,8 @@ class SiamACRTracker(SiameseTracker):
         #
         upsize = (cfg.TRACK.SCORE_SIZE-1) * cfg.TRACK.STRIDE + 1
         penalty = self.cal_penalty(lrtbs, hp['penalty_k'])   # 这个惩罚项来自论文21
-        p_score = penalty * cls * cen # 这里和论文有些出入
-        # p_score = penalty * cls * 1
+        # p_score = penalty * cls * cen # 这里和论文有些出入
+        p_score = 1 * cls * cen
         if cfg.TRACK.hanming:
             hp_score = p_score*(1 - hp['window_lr']) + self.window * hp['window_lr']
         else:

@@ -25,6 +25,8 @@ class DatasetFactory(object):
             dataset = UAVDataset(**kwargs)
         elif 'GOT-10k' == name:
             dataset = GOT10kDataset(**kwargs)
+        elif 'DTB70' in name:
+            dataset = OTBDataset(**kwargs)
         else:
             raise Exception("unknow dataset {}".format(kwargs['name']))
         return dataset

@@ -14,6 +14,10 @@ import numpy as np
 import math
 import sys
 import shutil
+
+current_file = os.path.dirname(__file__)
+os.chdir(current_file)
+sys.path.append('.')
 sys.path.append('../')
 
 from pysot.core.config import cfg
@@ -30,9 +34,11 @@ parser.add_argument('--video', default='', type=str,
         help='eval one special video')
 parser.add_argument('--dataset', type=str, default='OTB100',
         help='datasets')#OTB100 LaSOT UAV123 GOT-10k
+# parser.add_argument('--dataset', type=str, default='LaSOT',
+#         help='datasets')#OTB100 LaSOT UAV123 GOT-10k
 parser.add_argument('--vis', action='store_false', default=True,
         help='whether visualzie result')
-parser.add_argument('--snapshot', type=str, default='snapshot/checkpoint_e5.pth',help='snapshot of models to eval')
+parser.add_argument('--snapshot', type=str, default='snapshot/checkpoint_e10.pth',help='snapshot of models to eval')
 # parser.add_argument('--snapshot', type=str, default='snapshot/model_general.pth',help='snapshot of models to eval')
 
 # parser.add_argument('--config', type=str, default='../experiments/siamAcr_r50/config.yaml',
@@ -50,11 +56,14 @@ def main():
     cfg.merge_from_file(args.config)
 
     # hp_search
-    params = getattr(cfg.HP_SEARCH,args.dataset)
+    params = getattr(cfg.HP_SEARCH, args.dataset)
     hp = {'lr': params[0], 'penalty_k':params[1], 'window_lr':params[2]}
 
     cur_dir = os.path.dirname(os.path.realpath(__file__))
-    dataset_root = os.path.join(cur_dir, 'I:\\tracker\\auto_track_final', args.dataset)
+    # dataset_root = os.path.join(cur_dir, 'H:\\lasot_test', args.dataset)
+    dataset_root = os.path.join(cur_dir, 'H:\\', args.dataset)
+    # dataset_root = os.path.join('H:\\', args.dataset)
+    print(dataset_root)
 
     model = ModelBuilder()
 
@@ -65,13 +74,18 @@ def main():
     tracker = SiamACRTracker(model, cfg.TRACK)
 
     # create dataset
+    # dataset = DatasetFactory.create_dataset(name=args.dataset,
+    #                                         dataset_root=dataset_root,
+    #                                         load_img=False,
+    #                                         is_test=True)
+
     dataset = DatasetFactory.create_dataset(name=args.dataset,
                                             dataset_root=dataset_root,
-                                            load_img=False,
-                                            is_test=True)
+                                            load_img=False)
 
     model_name = args.snapshot.split('/')[-2] + str(hp['lr']) + '_' + str(hp['penalty_k']) + '_' + str(hp['window_lr'])
 
+    flag = True
 
     # OPE tracking
     for v_idx, video in enumerate(dataset):
@@ -79,13 +93,23 @@ def main():
             # test one special video
             if video.name != args.video:
                 continue
+        # if video.name != 'airplane-15' and flag:
+        #     continue
+        # if video.name == 'airplane-15':
+        #     flag = False
+        #     continue
         toc = 0
         pred_bboxes = []
         track_times = []
         pred_bboxs_refine = []
         for idx, (img, gt_bbox) in enumerate(video):
-
+            cv2.rectangle(img, (int(gt_bbox[0]), int(gt_bbox[1])),
+                          (int(gt_bbox[0] + gt_bbox[2]), int(gt_bbox[1] + gt_bbox[3])),
+                          (0, 255, 255), 3)
+            cv2.imshow('1', img)
+            cv2.waitKey(0)
             # CAR 跟踪器
+            tic = cv2.getTickCount()
             if idx == 0:
                 cx, cy, w, h = get_axis_aligned_bbox(np.array(gt_bbox))  # 初始化第一帧的时候，将GT转换成BBox GT就是左上和宽高
                 gt_bbox_ = [cx-(w-1)/2, cy-(h-1)/2, w, h]
@@ -113,9 +137,9 @@ def main():
             #     # pred_bbox_right = outputs['bbox_right']
             #     pred_bbox_refine = outputs['bbox_refine']
             #     pred_bboxs_refine.append(pred_bbox_refine)
-            # toc += cv2.getTickCount() - tic
-            # track_times.append((cv2.getTickCount() - tic)/cv2.getTickFrequency())
-            track_times.append("(cv2.getTickCount() - tic)/cv2.getTickFrequency()")
+            toc += cv2.getTickCount() - tic
+            track_times.append((cv2.getTickCount() - tic)/cv2.getTickFrequency())
+            # track_times.append("(cv2.getTickCount() - tic)/cv2.getTickFrequency()")
             if idx == 0:
                 cv2.destroyAllWindows()
             if args.vis and idx > 0 and True:
@@ -147,7 +171,8 @@ def main():
         toc /= cv2.getTickFrequency()
 
         # todo 如果想改变结果存储的位置，在这儿改变
-        model_path_car = os.path.join('results', args.dataset, model_name + "chx")
+        # model_path_car = os.path.join('results', args.dataset, model_name + "chx_" + "direct_combine" + "_vid_got10_e19")
+        model_path_car = os.path.join('results', args.dataset, model_name + "chx" + "e11=33" + 'dtb-otb')
         if not os.path.isdir(model_path_car):
             os.makedirs(model_path_car)
         result_path_car = os.path.join(model_path_car, '{}.txt'.format(video.name))
@@ -167,10 +192,10 @@ def main():
         #         f.write(','.join([str(i) for i in x])+'\n')
         #
         #
-        # print('({:3d}) Video: {:12s} Time: {:5.1f}s Speed: {:3.1f}fps'.format(
-        #     v_idx+1, video.name, toc, idx / toc))
+        print('({:3d}) Video: {:12s} Time: {:5.1f}s Speed: {:3.1f}fps'.format(
+            v_idx+1, video.name, toc, idx / toc))
     # os.chdir(model_path)
-    os.chdir(model_path_car)
+    # os.chdir(model_path_car)
     # save_file = 'I:\\tracker\\SiamCAR-master\\tools\\results'
     # shutil.make_archive(save_file, 'zip')
     # print('Records saved at', save_file + '.zip')

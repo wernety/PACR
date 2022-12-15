@@ -29,7 +29,7 @@ __C.TRAIN.OUTPUT_SIZE = 25
 
 __C.TRAIN.RESUME = ''
 
-__C.TRAIN.PRETRAINED = ''
+__C.TRAIN.PRETRAINED = 'I:\\tracker\\SiamACR-阶段性(更新track)\\tools\\snapshot\\checkpoint_e19_resume.pth'
 
 __C.TRAIN.LOG_DIR = './logs'
 
@@ -131,7 +131,7 @@ __C.DATASET.NAMES = ['YOUTUBEBB']
 __C.DATASET.VID = CN()
 __C.DATASET.VID.ROOT = 'train_dataset/vid/crop511'          # VID dataset path
 __C.DATASET.VID.ANNO = 'train_dataset/vid/train.json'
-__C.DATASET.VID.FRAME_RANGE = 100
+__C.DATASET.VID.FRAME_RANGE = 3
 __C.DATASET.VID.NUM_USE = 100000  # repeat until reach NUM_USE
 
 __C.DATASET.YOUTUBEBB = CN()
@@ -263,6 +263,8 @@ __C.TRACK.REGION_L = 0.44
 __C.HP_SEARCH = CN()
 
 __C.HP_SEARCH.OTB100 = [0.35, 0.2, 0.45]
+
+__C.HP_SEARCH.DTB70 = [0.7, 0.2, 0.3]
 
 __C.HP_SEARCH.GOT10K = [0.7, 0.06, 0.1]
 

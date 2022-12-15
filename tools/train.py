@@ -13,6 +13,13 @@ import math
 import json
 import random
 import numpy as np
+import sys
+
+current_file = os.path.dirname(__file__)
+os.chdir(current_file)
+sys.path.append('.')
+sys.path.append('../')
+
 
 import torch
 import torch.nn as nn
@@ -33,6 +40,7 @@ from pysot.models.model_builder import ModelBuilder
 from pysot.datasets.dataset import TrkDataset
 from pysot.core.config import cfg
 
+#获取py 文件所在目录
 
 logger = logging.getLogger('global')
 parser = argparse.ArgumentParser(description='siamcar tracking')
