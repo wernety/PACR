@@ -30,10 +30,7 @@ if pyv[0] == '3':
 
 class SubDataset(object):
     def __init__(self, name, root, anno, frame_range, num_use, start_idx):
-        # cur_path = os.path.dirname(os.path.realpath(__file__))
-        cur_path = 'I:\\tracker\\SiamCAR-master\\pysot\\datasets'
-        if name == 'OTB100':
-            cur_path = 'H:\\OTB100_crop\\crop511\\OTB100'
+        cur_path = os.path.dirname(os.path.realpath(__file__))
         self.name = name
         self.root = root
         self.anno = os.path.join(cur_path, '../../', anno)

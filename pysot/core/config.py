@@ -135,7 +135,7 @@ __C.DATASET.VID.FRAME_RANGE = 3
 __C.DATASET.VID.NUM_USE = 100000  # repeat until reach NUM_USE
 
 __C.DATASET.YOUTUBEBB = CN()
-__C.DATASET.YOUTUBEBB.ROOT = 'I:\\tracker\\SiamCAR-master\\train_dataset\\yt_bb\\crop511'  # YOUTUBEBB dataset path
+__C.DATASET.YOUTUBEBB.ROOT = 'train_dataset/yt_bb/crop511'  # YOUTUBEBB dataset path
 __C.DATASET.YOUTUBEBB.ANNO = 'train_dataset/yt_bb/train.json'
 __C.DATASET.YOUTUBEBB.FRAME_RANGE = 3
 __C.DATASET.YOUTUBEBB.NUM_USE = -1  # use all not repeat
@@ -164,13 +164,7 @@ __C.DATASET.LaSOT.ANNO = 'train_dataset/lasot/train.json'
 __C.DATASET.LaSOT.FRAME_RANGE = 100
 __C.DATASET.LaSOT.NUM_USE = 100000
 
-__C.DATASET.OTB100 = CN()
-__C.DATASET.OTB100.ROOT = 'H:\\OTB100_crop\\crop511'         # LaSOT dataset path
-__C.DATASET.OTB100.ANNO = '/OTB100_crop/crop511/OTB100/train.json'
-__C.DATASET.OTB100.FRAME_RANGE = 200
-__C.DATASET.OTB100.NUM_USE = 100000
-
-__C.DATASET.VIDEOS_PER_EPOCH = 10000 #600000
+__C.DATASET.VIDEOS_PER_EPOCH = 600000 #600000
 # ------------------------------------------------------------------------ #
 # Backbone options
 # ------------------------------------------------------------------------ #
